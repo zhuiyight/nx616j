@@ -1164,6 +1164,21 @@ bool icnss_is_fw_ready(void)
 }
 EXPORT_SYMBOL(icnss_is_fw_ready);
 
+void icnss_block_shutdown(bool status)
+{
+        if (!penv)
+                return;
+
+        if (status) {
+                set_bit(ICNSS_BLOCK_SHUTDOWN, &penv->state);
+                reinit_completion(&penv->unblock_shutdown);
+        } else {
+                clear_bit(ICNSS_BLOCK_SHUTDOWN, &penv->state);
+                complete(&penv->unblock_shutdown);
+        }
+}
+EXPORT_SYMBOL(icnss_block_shutdown);
+
 bool icnss_is_fw_down(void)
 {
 	if (!penv)
