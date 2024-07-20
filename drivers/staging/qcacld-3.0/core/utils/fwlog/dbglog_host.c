@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2018 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1682,7 +1682,7 @@ process_fw_diag_event_data(uint8_t *datap, uint32_t num_data)
 	uint32_t diag_data_len; /* each fw diag payload */
 	struct wlan_diag_data *diag_data;
 
-	while (num_data >= sizeof(struct wlan_diag_data)) {
+	while (num_data > 0) {
 		diag_data = (struct wlan_diag_data *)datap;
 		diag_type = WLAN_DIAG_0_TYPE_GET(diag_data->word0);
 		diag_data_len = WLAN_DIAG_0_LEN_GET(diag_data->word0);
@@ -4204,7 +4204,6 @@ static void cnss_diag_cmd_handler(const void *data, int data_len,
 {
 	struct dbglog_slot *slot = NULL;
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_MAX + 1];
-	int len;
 
 	/*
 	 * audit note: it is ok to pass a NULL policy here since a
@@ -4222,17 +4221,15 @@ static void cnss_diag_cmd_handler(const void *data, int data_len,
 		return;
 	}
 
-	len = nla_len(tb[CLD80211_ATTR_DATA]);
-	if (len < sizeof(struct dbglog_slot)) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: attr length less than sizeof(struct dbglog_slot)\n",
+	if (nla_len(tb[CLD80211_ATTR_DATA]) != sizeof(struct dbglog_slot)) {
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: attr length check fails\n",
 				__func__));
 		return;
 	}
-
 	slot = (struct dbglog_slot *)nla_data(tb[CLD80211_ATTR_DATA]);
-	if (len != (sizeof(struct dbglog_slot) + (uint64_t) slot->length)) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: attr length check fails\n",
-				__func__));
+
+	if (!slot) {
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: data NULL\n", __func__));
 		return;
 	}
 
