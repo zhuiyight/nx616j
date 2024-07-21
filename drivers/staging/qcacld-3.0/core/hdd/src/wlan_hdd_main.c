@@ -12763,10 +12763,10 @@ MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Qualcomm Atheros, Inc.");
 MODULE_DESCRIPTION("WLAN HOST DEVICE DRIVER");
 
-module_param_call(con_mode, con_mode_handler, param_get_int, &con_mode,
+module_param_cb(con_mode, &con_mode_ops, &con_mode,
 		  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
-module_param_call(fwpath, fwpath_changed_handler, param_get_string, &fwpath,
+module_param_cb(fwpath, &fwpath_ops, &fwpath,
 		  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
 module_param(enable_dfs_chan_scan, int, S_IRUSR | S_IRGRP | S_IROTH);
