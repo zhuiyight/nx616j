@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 /**
@@ -802,9 +811,7 @@ QDF_STATUS wlan_hdd_remain_on_channel_callback(tHalHandle hHal, void *pCtx,
 	 * Always schedule below work queue only after completing the
 	 * cancel_rem_on_chan_var event.
 	 */
-	/* If ssr is inprogress, do not schedule next roc req */
-	if (!hdd_ctx->is_ssr_in_progress)
-		schedule_delayed_work(&hdd_ctx->roc_req_work, 0);
+	schedule_delayed_work(&hdd_ctx->roc_req_work, 0);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -958,8 +965,6 @@ static void wlan_hdd_cancel_pending_roc(hdd_adapter_t *adapter)
 	}
 	roc_scan_id = roc_ctx->scan_id;
 	mutex_unlock(&cfg_state->remain_on_chan_ctx_lock);
-
-	INIT_COMPLETION(adapter->cancel_rem_on_chan_var);
 
 	if (adapter->device_mode == QDF_P2P_GO_MODE) {
 		void *sap_ctx = WLAN_HDD_GET_SAP_CTX_PTR(adapter);
@@ -1141,12 +1146,6 @@ static int wlan_hdd_execute_remain_on_channel(hdd_adapter_t *pAdapter,
 			duration *= P2P_ROC_DURATION_MULTIPLIER_GO_PRESENT;
 		else
 			duration *= P2P_ROC_DURATION_MULTIPLIER_GO_ABSENT;
-
-		/* this is to protect too huge value if some customers
-		 * give a higher value from supplicant
-		 */
-		if (duration > HDD_P2P_MAX_ROC_DURATION)
-			duration = HDD_P2P_MAX_ROC_DURATION;
 	}
 
 	hdd_prevent_suspend(WIFI_POWER_EVENT_WAKELOCK_ROC);
@@ -1964,7 +1963,6 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	uint8_t home_ch = 0;
 	bool enb_random_mac = false;
 	uint32_t mgmt_hdr_len = sizeof(struct ieee80211_hdr_3addr);
-	QDF_STATUS qdf_status;
 	int32_t mgmt_id;
 
 	ENTER();
@@ -1998,22 +1996,6 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	hdd_debug("Device_mode %s(%d) type: %d, wait: %d, offchan: %d",
 		   hdd_device_mode_to_string(pAdapter->device_mode),
 		   pAdapter->device_mode, type, wait, offchan);
-
-	/*
-	 * When frame to be transmitted is auth mgmt, then trigger
-	 * sme_send_mgmt_tx to send auth frame
-	 */
-	if ((pAdapter->device_mode == QDF_STA_MODE) &&
-	    (type == SIR_MAC_MGMT_FRAME &&
-	    subType == SIR_MAC_MGMT_AUTH)) {
-		qdf_status = sme_send_mgmt_tx(WLAN_HDD_GET_HAL_CTX(pAdapter),
-					      pAdapter->sessionId, buf, len);
-
-		if (QDF_IS_STATUS_SUCCESS(qdf_status))
-			return 0;
-		else
-			return -EINVAL;
-	}
 
 	if (type == SIR_MAC_MGMT_FRAME && subType == SIR_MAC_MGMT_ACTION &&
 	    len > IEEE80211_MIN_ACTION_SIZE)
@@ -2880,7 +2862,6 @@ wlan_hdd_allow_sap_add(hdd_context_t *hdd_ctx,
 		adapter = adapter_node->pAdapter;
 		if (adapter && adapter->device_mode == QDF_SAP_MODE &&
 		    test_bit(NET_DEVICE_REGISTERED, &adapter->event_flags) &&
-		    adapter->dev &&
 		    !strncmp(adapter->dev->name, name, IFNAMSIZ)) {
 			beacon_data_t *beacon = adapter->sessionCtx.ap.beacon;
 
@@ -2889,7 +2870,7 @@ wlan_hdd_allow_sap_add(hdd_context_t *hdd_ctx,
 				adapter->sessionCtx.ap.beacon = NULL;
 				qdf_mem_free(beacon);
 			}
-			if (adapter->dev->ieee80211_ptr) {
+			if (adapter->dev && adapter->dev->ieee80211_ptr) {
 				*sap_dev = adapter->dev->ieee80211_ptr;
 				return false;
 			}
@@ -2959,9 +2940,6 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 		return ERR_PTR(-EINVAL);
 	}
 
-	if (wlan_hdd_check_mon_concurrency())
-		return ERR_PTR(-EINVAL);
-
 	pAdapter = hdd_get_adapter(pHddCtx, QDF_STA_MODE);
 	if ((pAdapter != NULL) &&
 		!(wlan_hdd_validate_session_id(pAdapter->sessionId))) {
@@ -2972,15 +2950,6 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 					   eCSR_SCAN_ABORT_DEFAULT);
 			hdd_debug("Abort Scan while adding virtual interface");
 		}
-	}
-
-	ret = wlan_hdd_add_monitor_check(pHddCtx, &pAdapter, type, name,
-					 true, name_assign_type);
-	if (ret)
-		return ERR_PTR(-EINVAL);
-	if (pAdapter) {
-		EXIT();
-		return pAdapter->dev->ieee80211_ptr;
 	}
 
 	if (session_type == QDF_SAP_MODE) {
@@ -3015,9 +2984,7 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 		pAdapter = hdd_open_adapter(pHddCtx,
 					    session_type,
 					    name,
-					    wlan_hdd_get_intf_addr(
-								pHddCtx,
-								session_type),
+					    wlan_hdd_get_intf_addr(pHddCtx),
 					    name_assign_type,
 					    true);
 	}
@@ -3191,10 +3158,6 @@ int __wlan_hdd_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
 	if (pVirtAdapter->device_mode == QDF_SAP_MODE &&
 	    wlan_sap_is_pre_cac_active(pHddCtx->hHal)) {
 		hdd_clean_up_pre_cac_interface(pHddCtx);
-	} else if (wlan_hdd_is_session_type_monitor(
-				pVirtAdapter->device_mode)) {
-		wlan_hdd_del_monitor(pHddCtx, pVirtAdapter, TRUE);
-		hdd_reset_mon_mode_cb();
 	} else {
 		wlan_hdd_release_intf_addr(pHddCtx,
 					 pVirtAdapter->macAddressCurrent.bytes);
@@ -3326,8 +3289,8 @@ static inline bool is_public_action_frame(uint8_t *pb_frames,
 static inline bool is_p2p_action_frame(uint8_t *pb_frames,
 				       uint32_t frame_len)
 {
-	if (frame_len <= (WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET +
-	    SIR_MAC_P2P_OUI_SIZE + 2)) {
+	if (frame_len <= WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET +
+	    SIR_MAC_P2P_OUI_SIZE) {
 		hdd_debug("Not a p2p action frame len: %d", frame_len);
 		return false;
 	}

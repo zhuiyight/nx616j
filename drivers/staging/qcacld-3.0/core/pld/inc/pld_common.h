@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2016-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018 The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 #ifndef __PLD_COMMON_H__
@@ -434,24 +443,6 @@ static inline uint8_t *pld_get_wlan_mac_address(struct device *dev,
 {
 	return cnss_utils_get_wlan_mac_address(dev, num);
 }
-
-/**
- * pld_get_wlan_derived_mac_address() - API to query derived MAC address
- * from platform Driver
- * @dev: Device Structure
- * @num: Pointer to number of MAC address supported
- *
- * Platform Driver can have MAC address stored. This API needs to be used
- * to get those MAC address
- *
- * Return: Pointer to the list of MAC address
- */
-static inline uint8_t *pld_get_wlan_derived_mac_address(struct device *dev,
-							uint32_t *num)
-{
-	return cnss_utils_get_wlan_derived_mac_address(dev, num);
-}
-
 /**
  * pld_increment_driver_load_cnt() - Maintain driver load count
  * @dev: device
@@ -506,14 +497,6 @@ static inline uint8_t *pld_get_wlan_mac_address(struct device *dev,
 	*num = 0;
 	return NULL;
 }
-
-static inline uint8_t *pld_get_wlan_derived_mac_address(struct device *dev,
-							uint32_t *num)
-{
-	*num = 0;
-	return NULL;
-}
-
 static inline void pld_increment_driver_load_cnt(struct device *dev) {}
 static inline int pld_get_driver_load_cnt(struct device *dev)
 {
@@ -560,21 +543,8 @@ int pld_smmu_map(struct device *dev, phys_addr_t paddr,
 unsigned int pld_socinfo_get_serial_number(struct device *dev);
 int pld_is_qmi_disable(struct device *dev);
 int pld_is_fw_down(void);
-void pld_block_shutdown(struct device *dev, bool status);
 int pld_force_assert_target(struct device *dev);
 bool pld_is_fw_dump_skipped(struct device *dev);
-
-/**
- * pld_is_fw_rejuvenate() - Check WLAN fw is rejuvenating
- *
- * Help the driver decide whether FW down is due to
- * SSR or FW rejuvenate.
- *
- * Return: 1 FW is rejuvenating
- *         0 FW is not rejuvenating
- */
-int pld_is_fw_rejuvenate(void);
-
 void pld_set_cc_source(struct device *dev, enum pld_cc_src cc_source);
 enum pld_cc_src pld_get_cc_source(struct device *dev);
 

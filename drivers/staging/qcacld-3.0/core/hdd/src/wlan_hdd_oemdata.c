@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
@@ -364,13 +373,14 @@ void hdd_send_oem_data_rsp_msg(struct oem_data_rsp *oem_data_rsp)
  */
 static QDF_STATUS oem_process_data_req_msg(int oem_data_len, char *oem_data)
 {
+	hdd_adapter_t *adapter = NULL;
 	struct oem_data_req oem_data_req;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	/* for now, STA interface only */
-	if (!hdd_get_adapter(p_hdd_ctx, QDF_STA_MODE) &&
-	    !hdd_get_adapter(p_hdd_ctx, QDF_SAP_MODE)) {
-		hdd_err("No adapter for STA or SAP mode");
+	adapter = hdd_get_adapter(p_hdd_ctx, QDF_STA_MODE);
+	if (!adapter) {
+		hdd_err("No adapter for STA mode");
 		return QDF_STATUS_E_FAILURE;
 	}
 

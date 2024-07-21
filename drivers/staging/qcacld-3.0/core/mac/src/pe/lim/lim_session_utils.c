@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 /**=========================================================================
@@ -106,8 +115,6 @@ uint8_t lim_is_in_mcc(tpAniSirGlobal mac_ctx)
 		if ((mac_ctx->lim.gpSession[i].valid)) {
 			curr_oper_channel =
 				mac_ctx->lim.gpSession[i].currentOperChannel;
-			if (curr_oper_channel == 0)
-				continue;
 			if (chan == 0)
 				chan = curr_oper_channel;
 			else if (chan != curr_oper_channel)

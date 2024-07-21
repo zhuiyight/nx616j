@@ -1,6 +1,9 @@
 /*
  * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 /*
@@ -340,8 +349,8 @@ static inline bool is_non_rsn_cipher(uint8_t cipher_suite)
  * frame handling to determine whether received RSN in
  * Assoc/Reassoc request frames include supported cipher suites or not.
  *
- * Return: eSIR_SUCCESS if ALL supported cipher suites are present in the
- *                  received rsn IE else failure status.
+ * Return: eSIR_SUCCESS if ALL BSS basic rates are present in the
+ *                  received rateset else failure status.
  */
 
 uint8_t
@@ -452,8 +461,8 @@ lim_check_rx_rsn_ie_match(tpAniSirGlobal mac_ctx, tDot11fIERSN rx_rsn_ie,
  * frame handling to determine whether received RSN in
  * Assoc/Reassoc request frames include supported cipher suites or not.
  *
- * Return: Success if ALL supported cipher suites are present in the
- *                  received wpa IE else failure status.
+ * Return: Success if ALL BSS basic rates are present in the
+ *                  received rateset else failure status.
  */
 
 uint8_t
@@ -3768,23 +3777,34 @@ tSirRetStatus lim_sta_send_add_bss(tpAniSirGlobal pMac, tpSirAssocRsp pAssocRsp,
 				sta_context->enable_su_tx_bformer = 1;
 		}
 
-		chanWidthSupp = lim_get_ht_capability(pMac,
-					eHT_SUPPORTED_CHANNEL_WIDTH_SET,
-					psessionEntry);
-
-		/*
-		 * in limExtractApCapability function intersection of FW
-		 * advertised channel width and AP advertised channel
-		 * width has been taken into account for calculating
-		 * psessionEntry->ch_width
-		 */
-		if (chanWidthSupp &&
-		    ((pAssocRsp->HTCaps.supportedChannelWidthSet) ||
-		    (pBeaconStruct->HTCaps.supportedChannelWidthSet))) {
+		if ((pAssocRsp->HTCaps.supportedChannelWidthSet) &&
+				(chanWidthSupp)) {
+			pAddBssParams->staContext.ch_width = (uint8_t)
+				pAssocRsp->HTInfo.recommendedTxWidthSet;
+			if (pAssocRsp->VHTCaps.present)
+				vht_oper = &pAssocRsp->VHTOperation;
+			else if (pAssocRsp->vendor_vht_ie.VHTCaps.present) {
+				vht_oper = &pAssocRsp->
+						vendor_vht_ie.VHTOperation;
+				pe_debug("VHT Op IE is in vendor Specfic IE");
+			}
+			/*
+			 * in limExtractApCapability function intersection of FW
+			 * advertised channel width and AP advertised channel
+			 * width has been taken into account for calculating
+			 * psessionEntry->ch_width
+			 */
 			pAddBssParams->staContext.ch_width =
 					psessionEntry->ch_width;
+
+			pe_debug("StaCtx: vhtCap %d ChBW %d TxBF %d",
+					pAddBssParams->staContext.vhtCapable,
+					pAddBssParams->staContext.ch_width,
+					sta_context->vhtTxBFCapable);
+			pe_debug("StaContext su_tx_bfer %d",
+					sta_context->enable_su_tx_bformer);
 		} else {
-			sta_context->ch_width = CH_WIDTH_20MHZ;
+			sta_context->ch_width =	CH_WIDTH_20MHZ;
 			if ((IS_SIR_STATUS_SUCCESS(
 				wlan_cfg_get_int(pMac,
 					WNI_CFG_VHT_ENABLE_TXBF_20MHZ,
@@ -3792,14 +3812,6 @@ tSirRetStatus lim_sta_send_add_bss(tpAniSirGlobal pMac, tpSirAssocRsp pAssocRsp,
 					(false == enableTxBF20MHz))
 				sta_context->vhtTxBFCapable = 0;
 		}
-
-		pe_debug("StaCtx: vhtCap %d ChBW %d TxBF %d",
-				pAddBssParams->staContext.vhtCapable,
-				pAddBssParams->staContext.ch_width,
-				sta_context->vhtTxBFCapable);
-		pe_debug("StaContext su_tx_bfer %d",
-				sta_context->enable_su_tx_bformer);
-
 		pAddBssParams->staContext.mimoPS =
 			(tSirMacHTMIMOPowerSaveState)
 			pAssocRsp->HTCaps.mimoPowerSave;

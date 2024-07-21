@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2013-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 #include "htc_debug.h"
@@ -374,14 +383,14 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 		}
 
 		AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
-				("SVC:0x%4.4X, ULpipe:%d DLpipe:%d id:%d Ready",
+				("HTC Service:0x%4.4X, ULpipe:%d DLpipe:%d id:%d Ready\n",
 				 pEndpoint->service_id, pEndpoint->UL_PipeID,
 				 pEndpoint->DL_PipeID, pEndpoint->Id));
 
 		if (disableCreditFlowCtrl && pEndpoint->TxCreditFlowEnabled) {
 			pEndpoint->TxCreditFlowEnabled = false;
 			AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
-					("SVC:0x%4.4X ep:%d TX flow control disabled",
+					("HTC Service:0x%4.4X ep:%d TX flow control disabled\n",
 					 pEndpoint->service_id,
 					 assignedEndpoint));
 		}

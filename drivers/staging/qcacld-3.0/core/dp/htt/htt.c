@@ -1,6 +1,9 @@
 /*
  * Copyright (c) 2011, 2014-2018 The Linux Foundation. All rights reserved.
  *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 /**
@@ -328,20 +337,12 @@ static int
 htt_htc_attach_all(struct htt_pdev_t *pdev)
 {
 	if (htt_htc_attach(pdev, HTT_DATA_MSG_SVC))
-		goto flush_endpoint;
-
+		return -EIO;
 	if (htt_htc_attach(pdev, HTT_DATA2_MSG_SVC))
-		goto flush_endpoint;
-
+		return -EIO;
 	if (htt_htc_attach(pdev, HTT_DATA3_MSG_SVC))
-		goto flush_endpoint;
-
+		return -EIO;
 	return 0;
-
-flush_endpoint:
-	htc_flush_endpoint(pdev->htc_pdev, ENDPOINT_0, HTC_TX_PACKET_TAG_ALL);
-
-	return -EIO;
 }
 #else
 /**
@@ -399,13 +400,13 @@ htt_pdev_alloc(ol_txrx_pdev_handle txrx_pdev,
 	pdev->cfg.is_full_reorder_offload =
 			ol_cfg_is_full_reorder_offload(pdev->ctrl_pdev);
 	QDF_TRACE(QDF_MODULE_ID_HTT, QDF_TRACE_LEVEL_INFO,
-		  "full_reorder_offloaded %d",
+		  "is_full_reorder_offloaded? %d",
 		  (int)pdev->cfg.is_full_reorder_offload);
 
 	pdev->cfg.ce_classify_enabled =
 		ol_cfg_is_ce_classify_enabled(ctrl_pdev);
 	QDF_TRACE(QDF_MODULE_ID_HTT, QDF_TRACE_LEVEL_INFO,
-		  "ce_classify %d",
+		  "ce_classify_enabled? %d",
 		  pdev->cfg.ce_classify_enabled);
 
 	if (pdev->cfg.is_high_latency) {

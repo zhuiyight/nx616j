@@ -1,6 +1,9 @@
 /*
  * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all
@@ -733,9 +736,7 @@ wlan_hdd_cfg80211_extscan_signif_wifi_change_results_ind(
 		for (j = 0; j < ap_info->numOfRssi; j++)
 			hdd_debug("Rssi %d", *rssi++);
 
-		ap_info = (tSirWifiSignificantChange *)((char *)ap_info +
-				ap_info->numOfRssi * sizeof(*rssi) +
-				sizeof(*ap_info));
+		ap_info += ap_info->numOfRssi * sizeof(*rssi);
 	}
 
 	if (nla_put_u32(skb,
@@ -781,9 +782,7 @@ wlan_hdd_cfg80211_extscan_signif_wifi_change_results_ind(
 
 			nla_nest_end(skb, ap);
 
-			ap_info = (tSirWifiSignificantChange *)((char *)ap_info
-					+ ap_info->numOfRssi * sizeof(*rssi) +
-					sizeof(*ap_info));
+			ap_info += ap_info->numOfRssi * sizeof(*rssi);
 		}
 		nla_nest_end(skb, aps);
 
@@ -4369,6 +4368,23 @@ int wlan_hdd_cfg80211_reset_passpoint_list(struct wiphy *wiphy,
 #undef PARAM_ROAM_PLMN
 
 /**
+ * wlan_hdd_init_completion_extwow() - Initialize ext wow variable
+ * @hdd_ctx: Global HDD context
+ *
+ * Return: none
+ */
+#ifdef WLAN_FEATURE_EXTWOW_SUPPORT
+static inline void wlan_hdd_init_completion_extwow(hdd_context_t *pHddCtx)
+{
+	init_completion(&pHddCtx->ready_to_extwow);
+}
+#else
+static inline void wlan_hdd_init_completion_extwow(hdd_context_t *pHddCtx)
+{
+}
+#endif
+
+/**
  * wlan_hdd_cfg80211_extscan_init() - Initialize the ExtScan feature
  * @hdd_ctx: Global HDD context
  *
@@ -4376,6 +4392,7 @@ int wlan_hdd_cfg80211_reset_passpoint_list(struct wiphy *wiphy,
  */
 void wlan_hdd_cfg80211_extscan_init(hdd_context_t *hdd_ctx)
 {
+	wlan_hdd_init_completion_extwow(hdd_ctx);
 	init_completion(&ext_scan_context.response_event);
 	spin_lock_init(&ext_scan_context.context_lock);
 }

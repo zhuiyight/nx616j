@@ -1,6 +1,9 @@
 /*
  * Copyright (c) 2013-2018 The Linux Foundation. All rights reserved.
  *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 #ifndef _HIF_H_
@@ -42,7 +51,6 @@ extern "C" {
 typedef void __iomem *A_target_id_t;
 typedef void *hif_handle_t;
 
-#define HIF_DBG_PRINT_RATE 1000
 #define HIF_RATE_LIMIT_CE_ACCESS_LOG (64)
 
 #define HIF_TYPE_AR6002   2
@@ -200,7 +208,7 @@ struct qca_napi_data {
 	struct qca_napi_cpu  napi_cpu[NR_CPUS];
 	int                  lilcl_head, bigcl_head;
 	enum qca_napi_tput_state napi_mode;
-	struct qdf_cpuhp_handler *cpuhp_handler;
+	struct notifier_block hnc_cpu_notifier;
 	uint8_t              flags;
 };
 
@@ -744,22 +752,12 @@ void hif_set_bundle_mode(struct hif_opaque_softc *hif_ctx, bool enabled,
 int hif_bus_reset_resume(struct hif_opaque_softc *hif_ctx);
 
 void *hif_get_lro_info(int ctx_id, struct hif_opaque_softc *hif_hdl);
-
-typedef void (*hif_fake_resume_callback)(uint32_t val);
 #ifdef WLAN_SUSPEND_RESUME_TEST
+typedef void (*hif_fake_resume_callback)(uint32_t val);
 void hif_fake_apps_suspend(struct hif_opaque_softc *hif_ctx,
 			   hif_fake_resume_callback callback);
 void hif_fake_apps_resume(struct hif_opaque_softc *hif_ctx);
-#else
-static inline void hif_fake_apps_suspend(struct hif_opaque_softc *hif_ctx,
-			   hif_fake_resume_callback callback)
-{
-}
-
-static inline void hif_fake_apps_resume(struct hif_opaque_softc *hif_ctx)
-{
-}
-#endif /* End of WLAN_SUSPEND_RESUME_TEST */
+#endif
 
 #ifdef HIF_SDIO
 /**

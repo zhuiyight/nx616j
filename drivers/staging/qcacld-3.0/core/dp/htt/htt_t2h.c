@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2011-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -14,6 +17,12 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 /**
@@ -203,13 +212,6 @@ static void htt_t2h_lp_msg_handler(void *context, qdf_nbuf_t htt_t2h_msg,
 	{
 		uint16_t msdu_cnt;
 
-		if (!pdev->cfg.is_high_latency &&
-		    pdev->cfg.is_full_reorder_offload) {
-			qdf_print("HTT_T2H_MSG_TYPE_RX_OFFLOAD_DELIVER_IND not ");
-			qdf_print("supported when full reorder offload is ");
-			qdf_print("enabled in the configuration.\n");
-			break;
-		}
 		msdu_cnt =
 			HTT_RX_OFFLOAD_DELIVER_IND_MSDU_CNT_GET(*msg_word);
 		ol_rx_offload_deliver_ind_handler(pdev->txrx_pdev,
@@ -385,10 +387,11 @@ static void htt_t2h_lp_msg_handler(void *context, qdf_nbuf_t htt_t2h_msg,
 	}
 	case HTT_T2H_MSG_TYPE_STATS_CONF:
 	{
-		uint8_t cookie;
+		uint64_t cookie;
 		uint8_t *stats_info_list;
 
 		cookie = *(msg_word + 1);
+		cookie |= ((uint64_t) (*(msg_word + 2))) << 32;
 
 		stats_info_list = (uint8_t *) (msg_word + 3);
 		htc_pm_runtime_put(pdev->htc_pdev);
@@ -1121,18 +1124,6 @@ void htt_t2h_msg_handler_fast(void *context, qdf_nbuf_t *cmpl_msdus,
 
 			break;
 		}
-		case HTT_T2H_MSG_TYPE_TX_OFFLOAD_DELIVER_IND:
-		{
-			if (qdf_unlikely(
-				!pdev->cfg.is_full_reorder_offload)) {
-				break;
-			}
-
-			ol_tx_offload_deliver_indication_handler(
-					pdev->txrx_pdev, msg_word);
-			break;
-		}
-
 		case HTT_T2H_MSG_TYPE_RX_PN_IND:
 		{
 			u_int16_t peer_id;
