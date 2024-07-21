@@ -1,8 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -17,12 +14,6 @@
  * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
- */
-
-/*
- * This file was originally distributed by Qualcomm Atheros, Inc.
- * under proprietary terms before Copyright ownership was assigned
- * to the Linux Foundation.
  */
 
 #ifndef _OL_TXRX__H_
@@ -41,6 +32,15 @@
 #define OL_TXRX_PEER_UNREF_DELETE(peer) \
 	ol_txrx_peer_unref_delete(peer, __func__, __LINE__)
 
+/* ol_txrx_is_peer_eligible_for_deletion() - check if peer to be deleted
+ * @peer: peer handler
+ * @pdev: pointer to pdev
+ *
+ * Return: true if eligible for deletion else false
+ */
+bool ol_txrx_is_peer_eligible_for_deletion(ol_txrx_peer_handle peer,
+					   struct ol_txrx_pdev_t *pdev);
+
 int ol_txrx_peer_unref_delete(ol_txrx_peer_handle peer,
 					      const char *fname,
 					      int line);
@@ -48,6 +48,9 @@ int ol_txrx_peer_unref_delete(ol_txrx_peer_handle peer,
 ol_txrx_peer_handle ol_txrx_find_peer_by_addr_inc_ref(ol_txrx_pdev_handle pdev,
 						uint8_t *peer_addr,
 						uint8_t *peer_id);
+
+bool ol_txrx_mon_mgmt_process(struct mon_rx_status *rx_status,
+			      qdf_nbuf_t nbuf, uint8_t status);
 /**
  * ol_tx_desc_pool_size_hl() - allocate tx descriptor pool size for HL systems
  * @ctrl_pdev: the control pdev handle
@@ -69,6 +72,9 @@ ol_tx_desc_pool_size_hl(ol_pdev_handle ctrl_pdev);
 #define OL_TX_DESC_POOL_SIZE_MAX_HL 5000
 #endif
 
+#ifndef FW_STATS_DESC_POOL_SIZE
+#define FW_STATS_DESC_POOL_SIZE 10
+#endif
 
 #ifdef CONFIG_PER_VDEV_TX_DESC_POOL
 #define TXRX_HL_TX_FLOW_CTRL_VDEV_LOW_WATER_MARK 400
@@ -195,6 +201,15 @@ QDF_STATUS ol_txrx_set_wisa_mode(ol_txrx_vdev_handle vdev,
 			bool enable);
 void ol_txrx_update_mac_id(uint8_t vdev_id, uint8_t mac_id);
 void ol_txrx_peer_detach_force_delete(ol_txrx_peer_handle peer);
-void peer_unmap_timer_handler(void *data);
+void peer_unmap_timer_handler(unsigned long data);
+
+int ol_txrx_fw_stats_desc_pool_init(struct ol_txrx_pdev_t *pdev,
+				    uint8_t pool_size);
+void ol_txrx_fw_stats_desc_pool_deinit(struct ol_txrx_pdev_t *pdev);
+struct ol_txrx_fw_stats_desc_t
+	*ol_txrx_fw_stats_desc_alloc(struct ol_txrx_pdev_t
+				     *pdev);
+struct ol_txrx_stats_req_internal *ol_txrx_fw_stats_desc_get_req(struct
+	ol_txrx_pdev_t *pdev, uint8_t desc_id);
 
 #endif /* _OL_TXRX__H_ */
